@@ -1,0 +1,71 @@
+---
+title: "Portfolio-6"
+author: "Conor Lacey"
+date: "2023-04-06"
+output: github_document
+---
+
+```{r library}
+suppressWarnings(library(tidyverse))
+```
+
+### Introduction
+
+In this portfolio I will be doing some analysis of the previously generated simulation data from portfolio 5. 
+
+### Read in data 
+
+To begin I will first need to read in the data. Fortunately, I changed the previous portfolio so that is exports the data as .RDS files because these are actual R files that make it more compatible for analysis work in R naturally. 
+
+```{r read data}
+dMACS <- read_rds("data/dat_dMACS.RDS")
+dMACS_low <- read_rds("data/dat_dMACS_low.RDS")
+dMACS_high <- read_rds("data/dat_dMACS_high.RDS")
+
+dMACS_S <- read_rds("data/dat_dMACS_S.RDS")
+dMACS_s_low <- read_rds("data/dat_dMACS_S_low.RDS")
+dMACS_s_high <- read_rds("data/dat_dMACS_S_high.RDS")
+```
+
+You may also notice that there are some new data files that I didn't include in my previous portfolio. These new files with the words "low" and "high" are the confidence and credible intervals of the generated data. This will be useful in assessing how often there is possible effect size of zero.
+
+### Mean of Columns 
+
+Now because I generated the data over 500 times I now want to average that data in each of the 54 conditions. This is fairly easy in R by simply using the colMeans() function since each column is one condition. I will then transpose this data so that the conditions then become the rows.
+```{r column data}
+dMACS_a <- dMACS %>% colMeans() %>% data.frame()
+dMACS_low_a <- dMACS_low %>% colMeans() %>% data.frame()
+dMACS_high_a <- dMACS_high %>% colMeans() %>% data.frame()
+dMACS_df <- bind_cols(dMACS_a, dMACS_low_a, dMACS_high_a) %>% 
+  setNames(c("dMACS", "Lower", "Upper"))
+head(dMACS_df)
+
+dMACS_S_a <- dMACS_S %>% colMeans() %>% data.frame()
+dMACS_s_low_a <- dMACS_s_low %>% colMeans() %>% data.frame()
+dMACS_s_high_a <- dMACS_s_high %>% colMeans() %>% data.frame()
+dMACS_S_df <- bind_cols(dMACS_S_a, dMACS_s_low_a, dMACS_s_high_a) %>% 
+  setNames(c("dMACS_S", "Lower", "Upper"))
+head(dMACS_S_df)
+```
+
+### Proportion of Estimates with No Effects
+
+The last thing I will be doing this analysis is calculating the the percent of estimates that include zero in their confidence or credible interval. If they do, this is an indication that an effect size of zero is within reason. Effectively what this analysis will tell me is how often there is truly a zero effect.
+
+As I did previously, the data frame generated here will have 54 rows representing the conditions.
+
+```{r}
+props <- matrix(nrow = 54, ncol = 1) %>% data.frame() %>% 
+  setNames(c("Percent"))
+for (i in 1:54){
+props[i,1] <- sum((dMACS_low[i] <= 0 & dMACS_high[i] >= 0)/500)*100
+}
+head(props)
+
+props_shrunk <- matrix(nrow = 54, ncol = 1) %>% data.frame() %>% 
+  setNames(c("Percent"))
+for (i in 1:54){
+  props_shrunk[i,1] <- sum((dMACS_s_low[i] <= 0 & dMACS_s_high[i] >= 0)/500)*100
+}
+head(props_shrunk)
+```
